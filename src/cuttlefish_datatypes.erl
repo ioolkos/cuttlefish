@@ -41,7 +41,7 @@
                     {percent, float} |
                     float |
                     {list, datatype()} |
-                    {ip_or_domain_socket, {{local, string(), integer()} | {string(), integer()}}}.
+                    {ip_or_domain_socket, {{local, string()}, integer()} | {string(), integer()} }.
 -type extended() :: { integer, integer() } |
                     { string, string() } |
                     { file, file:filename() } |
