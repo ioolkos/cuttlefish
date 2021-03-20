@@ -40,7 +40,8 @@
                     {percent, integer} |
                     {percent, float} |
                     float |
-                    {list, datatype()}.
+                    {list, datatype()} |
+                    {ip_or_domain_socket, {{local, string(), integer()} | {string(), integer()}}}.
 -type extended() :: { integer, integer() } |
                     { string, string() } |
                     { file, file:filename() } |
@@ -92,6 +93,7 @@ is_supported({list, {list, _}}) ->
     false;
 is_supported({list, ListDatatype}) ->
     is_supported(ListDatatype);
+is_supported(ip_or_domain_socket) -> true;
 is_supported(_) -> false.
 
 -spec is_extended(any()) -> boolean().
@@ -267,6 +269,14 @@ from_string(List, {list, DataType}) when is_list(List) ->
               end,
               string:split(List, ",", all));
 
+from_string({{local, DomainSocket}, Port}, ip_or_domain_socket) when is_list(DomainSocket), is_integer(Port) ->
+    {{local, DomainSocket}, Port};
+from_string(String, ip_or_domain_socket) when is_list(String) ->
+    case string:tokens(String, ":") of
+        ["local", DomainSocket, PortString] -> {{local, DomainSocket}, port_to_integer(PortString)};
+        _   -> from_string(String, ip)
+    end;
+
 from_string(Thing, InvalidDatatype) ->
    {error, {type, {Thing, InvalidDatatype}}}.
 
@@ -415,6 +425,12 @@ from_string_ip_test() ->
                                        from_string(Bad, ip))
                   end,
                   BadIPs),
+    ok.
+
+from_string_ip_or_domain_socket_test() ->
+    ?assertEqual({{local, "/tmp/sock"}, 0}, from_string("local:/tmp/sock:0", ip_or_domain_socket)),
+    ?assertEqual({{local, "/tmp/sock.sock"}, 12}, from_string("local:/tmp/sock.sock:12", ip_or_domain_socket)),
+    ?assertEqual({"127.0.0.1", 8098}, from_string("127.0.0.1:8098", ip_or_domain_socket)),
     ok.
 
 from_string_enum_test() ->
